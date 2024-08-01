@@ -54,7 +54,7 @@ public static extern int dup2 (int oldFileDescriptor, int newFileDescriptor);
         $tmpfile = New-TemporaryFile
         $fd_new = [FileStream]::New($tmpfile.FullName, [FileMode]::Truncate, [FileAccess]::ReadWrite, [FileShare]::ReadWrite)
         # override the file descriptor with this file
-        [PInvoke.LibC]::dup2($fd_new.Handle, $fd) | Out-Null
+        [PInvoke.LibC]::dup2($fd_new.Handle, $fd) > $null
         return $tmpfile.OpenText()
 
     }
@@ -197,11 +197,11 @@ function Private:SendStdTextTo([string]$target, [string]$defaultTarget, [string]
     }
     if ($doEntry)
     {
-        TextEntry $entryType $message | Out-Null
+        TextEntry $entryType $message > $null
     }
     else
     {
-        ServerLog $logLevel $message | Out-Null
+        ServerLog $logLevel $message > $null
     }
     return $null
 }
@@ -238,7 +238,7 @@ while ($true)
     $ParsedEntry = ConvertFrom-Json -AsHashTable –InputObject $Entry
     # Get the script part of the entry from server and remove it so it won't be available in context on execute.
     $CompleteScript = $ParsedEntry.script
-    $ParsedEntry.PSObject.Properties.Remove('script') | Out-Null
+    $ParsedEntry.PSObject.Properties.Remove('script') > $null
     $global:InnerContext = $ParsedEntry  # CommonServer script will use this to create the  object
     # Calculate length of lines of entire code being executed except for the user script part
     $BaseCodeLineCount = $ParsedEntry.linecount
@@ -257,7 +257,7 @@ while ($true)
         $FinalScript = New-Item -Path $ScriptPath -Name $ScriptName -ItemType "file" -Value $CompleteScript
         # Get all variable names before inner script run
         $StartupVars = Get-Variable | Select-Object -ExpandProperty Name
-        ServerLog ([ServerLogLevel]::info) "Powershell loop starting script execute (line count: $BaseCodeLineCount)..." | Out-Null
+        ServerLog ([ServerLogLevel]::info) "Powershell loop starting script execute (line count: $BaseCodeLineCount)..." > $null
         & $ScriptPath$ScriptName
         # Get a list of all user created variables after script run
         $UserVars = Get-Variable -Exclude $StartupVars -Scope Global
@@ -387,8 +387,8 @@ while ($true)
         Remove-Item $ScriptPath$ScriptName
     }
     # reset output buffers
-    $ConsoleOutWriter.GetStringBuilder().Clear() | Out-Null
-    $ConsoleErrWriter.GetStringBuilder().Clear() | Out-Null
+    $ConsoleOutWriter.GetStringBuilder().Clear() > $null
+    $ConsoleErrWriter.GetStringBuilder().Clear() > $null
     # Send script completion status to server
     $OutputStream.WriteLine($(@{ type = 'completed' } | ConvertTo-Json -Compress))
     # if the script running on native powershell then terminate the process after the script executed
